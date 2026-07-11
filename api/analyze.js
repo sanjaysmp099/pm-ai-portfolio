@@ -1,6 +1,7 @@
 // Vercel serverless function.
-// This runs on the server, NOT in the browser — so your API key stays hidden.
-// Set ANTHROPIC_API_KEY as an Environment Variable in your Vercel project settings.
+// Uses Google Gemini's FREE API tier — no billing required.
+// Set GEMINI_API_KEY as an Environment Variable in your Vercel project settings.
+// Get a free key at https://aistudio.google.com -> "Get API key"
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -34,20 +35,23 @@ A short bulleted list of the most systemic issues (e.g. recurring naming variant
 Be concise, specific, and reference actual entries from the data provided. Do not invent data not present in the input.`;
 
   try {
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
+    const apiKey = process.env.GEMINI_API_KEY;
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+
+    const response = await fetch(url, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': process.env.ANTHROPIC_API_KEY,
-        'anthropic-version': '2023-06-01'
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-6',
-        max_tokens: 1500,
-        system: systemPrompt,
-        messages: [
-          { role: 'user', content: `Here is the data to analyze:\n\n${data}` }
-        ]
+        contents: [
+          {
+            role: 'user',
+            parts: [{ text: `${systemPrompt}\n\nHere is the data to analyze:\n\n${data}` }]
+          }
+        ],
+        generationConfig: {
+          maxOutputTokens: 1500,
+          temperature: 0.4
+        }
       })
     });
 
@@ -57,8 +61,7 @@ Be concise, specific, and reference actual entries from the data provided. Do no
       return res.status(500).json({ error: result.error.message || 'API error' });
     }
 
-    const textBlock = result.content.find(block => block.type === 'text');
-    const report = textBlock ? textBlock.text : 'No report generated.';
+    const report = result.candidates?.[0]?.content?.parts?.[0]?.text || 'No report generated.';
 
     return res.status(200).json({ report });
   } catch (err) {
