@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Offer & Service Data Governance Agent | Sanjay Gujjar</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+  :root {
+    --bg: #0f1115;
+    --panel: #171a21;
+    --accent: #5b8cff;
+    --text: #e6e8ee;
+    --muted: #9aa2b1;
+    --border: #262a35;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.5;
+  }
+  header {
+    padding: 40px 24px 20px;
+    max-width: 900px;
+    margin: 0 auto;
+  }
+  header h1 {
+    font-size: 28px;
+    margin: 0 0 8px;
+  }
+  header p {
+    color: var(--muted);
+    margin: 4px 0;
+    font-size: 15px;
+  }
+  .tag {
+    display: inline-block;
+    background: rgba(91,140,255,0.15);
+    color: var(--accent);
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 12px;
+    margin-top: 10px;
+  }
+  main {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 0 24px 60px;
+  }
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+    margin-top: 20px;
+  }
+  .panel h2 {
+    font-size: 16px;
+    margin: 0 0 12px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  textarea {
+    width: 100%;
+    min-height: 220px;
+    background: #0d0f14;
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px;
+    font-family: "SF Mono", Consolas, monospace;
+    font-size: 13px;
+    resize: vertical;
+  }
+  button {
+    background: var(--accent);
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    margin-top: 14px;
+  }
+  button:disabled { opacity: 0.5; cursor: not-allowed; }
+  button.secondary {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    margin-left: 10px;
+  }
+  #output {
+    margin-top: 20px;
+    white-space: pre-wrap;
+    font-size: 14px;
+  }
+  #output table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 14px 0;
+    font-size: 13px;
+  }
+  #output th, #output td {
+    border: 1px solid var(--border);
+    padding: 8px 10px;
+    text-align: left;
+  }
+  #output th {
+    background: #1d212b;
+    color: var(--muted);
+  }
+  .sev-High { color: #ff6b6b; font-weight: 600; }
+  .sev-Medium { color: #ffb84d; font-weight: 600; }
+  .sev-Low { color: #7ee787; font-weight: 600; }
+  .loading { color: var(--muted); font-style: italic; }
+  footer {
+    text-align: center;
+    color: var(--muted);
+    font-size: 13px;
+    padding: 30px;
+  }
+  footer a { color: var(--accent); }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Offer & Service Data Completeness & Governance Agent</h1>
+  <p>Paste in messy product/service attribute data. The agent flags gaps, taxonomy inconsistencies, and orphaned relationships — the same discipline required for PIM/CPQ data governance — and produces a leadership-ready remediation summary.</p>
+  <span class="tag">Built by Sanjay Gujjar — PM + Applied AI</span>
+</header>
+
+<main>
+  <div class="panel">
+    <h2>Step 1 — Paste your data</h2>
+    <textarea id="inputData" placeholder="Paste CSV-style or plain text rows here, e.g.:
+Product: SmartBreaker X200 | Service: Installation Service | Voltage Range: 220-440V | Compliance Cert: (missing)
+Product: SmartBreaker X200 | Service: Install | Voltage Range: (missing) | Compliance Cert: IEC 60947
+..."></textarea>
+    <br>
+    <button id="loadSample">Load sample dataset</button>
+    <button id="runBtn">Run Governance Check</button>
+  </div>
+
+  <div class="panel" id="resultsPanel" style="display:none;">
+    <h2>Step 2 — Governance Report</h2>
+    <div id="output"></div>
+  </div>
+</main>
+
+<footer>
+  Case study & more AI-for-PM tools at <a href="index.html">my portfolio</a> ·
+  <a href="https://www.linkedin.com/" target="_blank">LinkedIn</a>
+</footer>
+
+<script>
+const sampleData = `Product: SmartBreaker X200 | Service: Installation Service | Voltage Range: 220-440V | Compliance Cert: (missing)
+Product: SmartBreaker X200 | Service: Install | Voltage Range: (missing) | Compliance Cert: IEC 60947
+Product: SmartBreaker X200 | Service: Maintenance Plan | Voltage Range: 220-440V | Compliance Cert: IEC 60947
+Product: EcoPanel 400 | Service: (no linked service) | Voltage Range: 380-415V | Compliance Cert: CE
+Product: EcoPanel 400 | Service: Installation Service | Voltage Range: 380-415V | Compliance Cert: (missing)
+Product: (unlinked) | Service: Remote Monitoring Add-on | Voltage Range: N/A | Compliance Cert: N/A
+Product: GridSync Pro | Service: Onboarding & Config | Voltage Range: 11kV-33kV | Compliance Cert: IEC 61850
+Product: GridSync Pro | Service: onboarding-config | Voltage Range: 11kV-33kV | Compliance Cert: (missing)
+Product: PowerLink Mini | Service: Installation Service | Voltage Range: 110-240V | Compliance Cert: UL 508A
+Product: PowerLink Mini | Service: Extended Warranty | Voltage Range: (missing) | Compliance Cert: (missing)`;
+
+document.getElementById('loadSample').addEventListener('click', () => {
+  document.getElementById('inputData').value = sampleData;
+});
+
+document.getElementById('runBtn').addEventListener('click', async () => {
+  const data = document.getElementById('inputData').value.trim();
+  const resultsPanel = document.getElementById('resultsPanel');
+  const output = document.getElementById('output');
+  if (!data) {
+    alert('Paste some data first, or click "Load sample dataset".');
+    return;
+  }
+  resultsPanel.style.display = 'block';
+  output.innerHTML = '<p class="loading">Analyzing data for completeness, naming consistency, and orphaned relationships...</p>';
+  document.getElementById('runBtn').disabled = true;
+
+  try {
+    const response = await fetch('/api/analyze', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ data })
+    });
+    const result = await response.json();
+    if (result.error) {
+      output.innerHTML = '<p style="color:#ff6b6b;">Error: ' + result.error + '</p>';
+    } else {
+      output.innerHTML = renderMarkdownish(result.report);
+    }
+  } catch (err) {
+    output.innerHTML = '<p style="color:#ff6b6b;">Request failed: ' + err.message + '</p>';
+  } finally {
+    document.getElementById('runBtn').disabled = false;
+  }
+});
+
+// Lightweight renderer: converts the model's markdown table + text into styled HTML
+function renderMarkdownish(text) {
+  let html = text
+    .replace(/^### (.*$)/gim, '<h3>$1</h3>')
+    .replace(/^## (.*$)/gim, '<h2>$1</h2>')
+    .replace(/^# (.*$)/gim, '<h2>$1</h2>')
+    .replace(/\*\*(.*?)\*\*/gim, '<strong>$1</strong>');
+
+  // Convert markdown tables to HTML tables
+  const lines = html.split('\n');
+  let out = [];
+  let inTable = false;
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    if (/^\|.*\|$/.test(line.trim())) {
+      if (!inTable) { out.push('<table>'); inTable = true; }
+      const cells = line.trim().split('|').filter(c => c.trim() !== '');
+      if (/^[-:\s|]+$/.test(line.trim().replace(/\|/g,''))) continue; // skip separator row
+      const isHeader = i > 0 && /^\|[-:\s|]+\|$/.test(lines[i+1] ? lines[i+1].trim() : '');
+      const tag = isHeader ? 'th' : 'td';
+      let rowHtml = '<tr>' + cells.map(c => {
+        let cell = c.trim();
+        cell = cell.replace(/^(High)$/i, '<span class="sev-High">$1</span>')
+                    .replace(/^(Medium)$/i, '<span class="sev-Medium">$1</span>')
+                    .replace(/^(Low)$/i, '<span class="sev-Low">$1</span>');
+        return `<${tag}>${cell}</${tag}>`;
+      }).join('') + '</tr>';
+      out.push(rowHtml);
+    } else {
+      if (inTable) { out.push('</table>'); inTable = false; }
+      out.push(line);
+    }
+  }
+  if (inTable) out.push('</table>');
+  return out.join('\n');
+}
+</script>
+
+</body>
+</html>
